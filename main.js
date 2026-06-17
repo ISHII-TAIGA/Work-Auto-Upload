@@ -78,6 +78,12 @@ document.getElementById("uploadBtn").addEventListener("click", async () => {
   result.innerText = "アップロード中…";
 
   for (const file of files) {
+
+    // .git フォルダを完全に除外
+    if (file.webkitRelativePath.includes(".git")) {
+        continue;
+    }
+    
     const path = file.webkitRelativePath.split("/").slice(1).join("/");
     const content = await file.text();
 
