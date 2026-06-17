@@ -1,0 +1,33 @@
+body {
+  font-family: sans-serif;
+  padding: 20px;
+}
+
+#result {
+  margin-top: 20px;
+  color: #333;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="file"],
+button {
+  font-size: 18px;
+  padding: 10px;
+  margin: 10px 0;
+  width: 100%;
+  max-width: 500px;
+  box-sizing: border-box;
+}
+
+button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  background-color: #45a049;
+}
