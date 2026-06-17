@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>GitHub 自動アップロード</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>GitHub 自動アップロード</h1>
+
+  <label>リポジトリURL：</label>
+  <input type="text" id="repoUrl" placeholder="https://github.com/USER/REPO">
+
+  <label>GitHub Token：</label>
+  <input type="text" id="token" placeholder="GitHub Personal Access Token">
+
+  <br><br>
+
+  <input type="file" id="folderInput" webkitdirectory>
+  <button id="uploadBtn">アップロード</button>
+
+  <div id="result"></div>
+
+  <script src="main.js"></script>
+</body>
+</html>
