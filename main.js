@@ -124,27 +124,34 @@ document.getElementById("uploadBtn").addEventListener("click", async () => {
   const failed = [];   // 失敗したファイルを入れる箱
   let done = 0;        // 成功した数
 
+  const btn = document.getElementById("uploadBtn");
+  btn.disabled = true;
+
   result.innerText = "アップロード中…";
 
-  for (const file of files) {
-    const parts = file.webkitRelativePath.split("/");
-    if (parts.includes(".git")) continue;
-    const path = parts.slice(1).join("/");
+  try {
+    for (const file of files) {
+      const parts = file.webkitRelativePath.split("/");
+      if (parts.includes(".git")) continue;
+      const path = parts.slice(1).join("/");
 
-    result.innerText = `アップロード中… ${path}`;   // 今どのファイルか分かるように
+      result.innerText = `アップロード中… ${path}`;   // 今どのファイルか分かるように
 
-    try {
-      const content = await fileToBase64(file);
-      const sha = await getFileSha(owner, repo, path, token);
-      await uploadFile(owner, repo, path, content, token, sha);
-      done++;   // ここまで来たら成功
-    } catch (e) {
-      failed.push(`${path}: ${e.message}`);   // 失敗を記録して、次のファイルへ
-      // トークンが無効(401)なら、続けても全部失敗するのでここで止める
-      if (e.status === 401) break;
+      try {
+        const content = await fileToBase64(file);
+        const sha = await getFileSha(owner, repo, path, token);
+        await uploadFile(owner, repo, path, content, token, sha);
+        done++;   // ここまで来たら成功
+      } catch (e) {
+        failed.push(`${path}: ${e.message}`);   // 失敗を記録して、次のファイルへ
+        // トークンが無効(401)なら、続けても全部失敗するのでここで止める
+        if (e.status === 401) break;
+      }
+
+      await new Promise(r => setTimeout(r, 150));
     }
-
-    await new Promise(r => setTimeout(r, 150));
+  } finally {
+    btn.disabled = false;
   }
 
   const lines = [`成功: ${done} ファイル`];
