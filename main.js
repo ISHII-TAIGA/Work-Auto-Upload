@@ -31,7 +31,7 @@ async function uploadFile(owner, repo, path, content, token, sha = null) {
   const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodePath(path)}`;
 
   const body = {
-    message: sha ? `update: ${path}` : "first commit",
+    message: sha ? `update: ${path}` : `add: ${path}`,
     content: content
   };
 
@@ -39,14 +39,7 @@ async function uploadFile(owner, repo, path, content, token, sha = null) {
     body.sha = sha;
   }
 
-  const res = await fetch(url, {
-    method: "PUT",
-    headers: {
-      "Authorization": `token ${token}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(body)
-  });
+  const res = await githubRequest("PUT", url, token, body);
 
   if (!res.ok) {
     const err = new Error(await errorMessage(res));
@@ -57,13 +50,25 @@ async function uploadFile(owner, repo, path, content, token, sha = null) {
   return res.json();
 }
 
+// SHA取得 → アップロード を1セットでやる関数
+async function uploadWithSha(owner, repo, path, content, token) {
+  let sha = await getFileSha(owner, repo, path, token);
+  try {
+    return await uploadFile(owner, repo, path, content, token, sha);
+  } catch (e) {
+    if (e.status === 409 || e.status === 422) {
+      sha = await getFileSha(owner, repo, path, token);
+      return await uploadFile(owner, repo, path, content, token, sha);
+    }
+    throw e;
+  }
+}
+
 // 既存ファイルの SHA を取得
 async function getFileSha(owner, repo, path, token) {
   const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodePath(path)}`;
 
-  const res = await fetch(url, {
-    headers: { "Authorization": `token ${token}` }
-  });
+  const res = await githubRequest("GET", url, token);
 
   if (res.status === 404) return null;
 
@@ -95,6 +100,37 @@ async function errorMessage(res) {
     return `${res.status} ${data.message || res.statusText}`;
   } catch {
     return `${res.status} ${res.statusText}`;
+  }
+}
+
+// 指定ミリ秒だけ待つ関数
+const sleep = (ms) => new Promise((r) => setTimeout(r,ms));
+
+// GitHub API にリクエストを送る関数
+async function githubRequest(method, url, token, body) {
+  for (let attempt = 1; ;attempt++) {
+    const res = await fetch(url, {
+      method,
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Accept": "application/vnd.github+json",
+        ...(body ? { "Content-Type": "application/json" } : {})
+      },
+      body: body ? JSON.stringify(body) : undefined
+    });
+
+    //レート制限かどうかの判定
+    const limited =
+    res.status === 429 ||
+    (res.status === 403 &&
+      (res.headers.get("retry-after") || res.headers.get("x-ratelimit-remaining") === "0"));
+    
+    if (limited && attempt < 3) {
+      const retryAfter = Number(res.headers.get("retry-after"));
+      await sleep((retryAfter > 0 ? retryAfter : 5 * attempt) * 1000);
+      continue; // 少し待ってからもう一度
+    }
+    return res;
   }
 }
 
@@ -139,8 +175,7 @@ document.getElementById("uploadBtn").addEventListener("click", async () => {
 
       try {
         const content = await fileToBase64(file);
-        const sha = await getFileSha(owner, repo, path, token);
-        await uploadFile(owner, repo, path, content, token, sha);
+        await uploadWithSha(owner, repo, path, content, token);
         done++;   // ここまで来たら成功
       } catch (e) {
         failed.push(`${path}: ${e.message}`);   // 失敗を記録して、次のファイルへ
@@ -148,7 +183,7 @@ document.getElementById("uploadBtn").addEventListener("click", async () => {
         if (e.status === 401) break;
       }
 
-      await new Promise(r => setTimeout(r, 150));
+      await sleep(500);
     }
   } finally {
     btn.disabled = false;
