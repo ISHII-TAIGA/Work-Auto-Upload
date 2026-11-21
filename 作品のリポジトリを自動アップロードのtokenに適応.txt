@@ -1,0 +1,20 @@
+新しく作成した作品のリポジトリを、自動アップロードのtokenに適応させる方法
+
+１．トークンの一覧を開く
+・GitHub → 右上のアイコン → Settings → Menu
+・左側に出てくるメニューの一番下にあるDeveloper settings
+・Personal access tokens → Fine-grained tokens
+
+
+２．対象のtokenを開く
+・Web-AutoUpload-Token の名前をクリックする
+
+
+３．対象のリポジトリを追加する
+・「Access on @ISHII-TAIGA ISHII-TAIGA」  の欄の横ある Edit(または鉛筆マーク)を押す
+・Only select repositories のまま、Select repositories から追加したい作品のリポジトリを選ぶ
+・今までの Work-Auto-Upload が選ばれたままなのも確認する(外れてたら選び直す)
+
+
+４．保存する
+・一番下の Update を押す(画面によっては Save の場合もある)
