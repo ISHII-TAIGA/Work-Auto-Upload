@@ -7,6 +7,10 @@ const folderInput = document.getElementById("folderInput");
 const uploadBtn = document.getElementById("uploadBtn");
 const resultDiv = document.getElementById("result");
 
+const clearBtn = document.getElementById("clearBtn");
+const fileCountP = document.getElementById("fileCount");
+const fileListUl= document.getElementById("fileList");
+
 
 // ===============================
 // 設定
@@ -114,6 +118,34 @@ function getTargets(files) {
   return targets;
 }
 
+// 選択中のファイル一覧を画面に表示する関数
+function renderFileList() {
+  fileListUl.innerHTML = "";  // まず一覧を空にする
+
+  const files = folderInput.files;
+  if (files.length === 0) {
+    fileCountP.textContent = "";
+    return;
+  }
+
+  const targets = getTargets(files)
+  if (targets.length === 0) {
+    fileCountP.textContent = "アップロード対象のファイルがありません。";
+    return;
+  }
+
+  fileCountP.textContent = `${targets.length} ファイルが選択されています`;
+
+  for (const { path } of targets) {
+    const li = document.createElement("li");
+    li.textContent = path;
+    fileListUl.appendChild(li);
+  }
+}
+
+// フォルダが選ばれたら、一覧を更新する
+folderInput.addEventListener("change", renderFileList);
+
 // エラーメッセージを受け取る関数
 async function errorMessage(res) {
   try {
@@ -187,6 +219,7 @@ uploadBtn.addEventListener("click", async () => {
   let done = 0;        // 成功した数
 
   uploadBtn.disabled = true;
+  clearBtn.disabled = true;
   resultDiv.innerText = "アップロード中…";
 
   try {
@@ -207,6 +240,7 @@ uploadBtn.addEventListener("click", async () => {
     }
   } finally {
     uploadBtn.disabled = false;
+    clearBtn.disabled = false;
   }
 
   const lines = [`成功: ${done} / ${targets.length} ファイル`];
@@ -214,3 +248,10 @@ uploadBtn.addEventListener("click", async () => {
   resultDiv.innerText = lines.join("\n");
   resultDiv.style.whiteSpace = "pre-wrap";
 });
+
+// 選択解除ボタン
+clearBtn.addEventListener("click", () => {
+  folderInput.value = "";    // 選択したファイルを全部解除する
+  renderFileList();          // 一覧も空にする
+  resultDiv.innerText = "";  // 前回のアップロード結果も消す
+})
