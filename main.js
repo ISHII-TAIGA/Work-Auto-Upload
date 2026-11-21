@@ -1,10 +1,18 @@
 // ===============================
-// 変数宣言
+// 要素の取得
 // ===============================
-let repoUrl;
-let token;
-let files;
-let result;
+const repoUrlInput = document.getElementById("repoUrl");
+const tokenInput = document.getElementById("token");
+const folderInput = document.getElementById("folderInput");
+const uploadBtn = document.getElementById("uploadBtn");
+const resultDiv = document.getElementById("result");
+
+
+// ===============================
+// 設定
+// ===============================
+const API_BASE = "https://api.github.com";  // GitHub API の入り口
+const WAIT_BETWEEN_FILES_MS = 500;          // 1ファイルごとの待ち時間（ミリ秒）
 
 
 // ===============================
@@ -28,7 +36,7 @@ async function fileToBase64(file) {
 
 // GitHub にファイルをアップロードする関数
 async function uploadFile(owner, repo, path, content, token, sha = null) {
-  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodePath(path)}`;
+  const url = `${API_BASE}/repos/${owner}/${repo}/contents/${encodePath(path)}`;
 
   const body = {
     message: sha ? `update: ${path}` : `add: ${path}`,
@@ -66,7 +74,7 @@ async function uploadWithSha(owner, repo, path, content, token) {
 
 // 既存ファイルの SHA を取得
 async function getFileSha(owner, repo, path, token) {
-  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodePath(path)}`;
+  const url = `${API_BASE}/repos/${owner}/${repo}/contents/${encodePath(path)}`;
 
   const res = await githubRequest("GET", url, token);
 
@@ -91,6 +99,19 @@ function parseRepoUrl(url) {
   const m = url.trim().match(/^https?:\/\/github\.com\/([^\/\s]+)\/([^\/\s#?]+)/i);
   if (!m) return null;
   return { owner: m[1], repo: m[2].replace(/\.git$/i, "") };
+}
+
+// アップロード対象のファイルを選ぶ関数
+function getTargets(files) {
+  const targets = [];
+  for (const file of files) {
+    const parts = file.webkitRelativePath.split("/");
+    if (parts.includes(".git")) continue;
+    const path = parts.slice(1).join("/");
+    if (!path) continue;
+    targets.push({ file, path });
+  }
+  return targets;
 }
 
 // エラーメッセージを受け取る関数
@@ -137,60 +158,59 @@ async function githubRequest(method, url, token, body) {
 // ===============================
 // メイン処理（アップロードボタン）
 // ===============================
-document.getElementById("uploadBtn").addEventListener("click", async () => {
+uploadBtn.addEventListener("click", async () => {
 
-  // ← 値の取得はここで行う（クリック時）
-  repoUrl = document.getElementById("repoUrl").value;
-  token = document.getElementById("token").value.trim();
-  files = document.getElementById("folderInput").files;
-  result = document.getElementById("result");
+  // クリックした時点の入力値を取る（この関数の中だけで使う）
+  const repoUrl = repoUrlInput.value;
+  const token = tokenInput.value.trim();
+  const files = folderInput.files;
 
   if (!repoUrl || !token || files.length === 0) {
-    result.innerText = "リポジトリURL・Token・フォルダを確認してください。";
+    resultDiv.innerText = "リポジトリURL・Token・フォルダを確認してください。";
     return;
   }
 
   const repoInfo = parseRepoUrl(repoUrl);
   if(!repoInfo) {
-    result.innerText = "リポジトリURLの形式が正しくありません。例: https://github.com/USER/REPO";
+    resultDiv.innerText = "リポジトリURLの形式が正しくありません。例: https://github.com/USER/REPO";
     return;
   }
   const { owner, repo } = repoInfo;
 
+  const targets = getTargets(files);
+  if (targets.length === 0) {
+    resultDiv.innerText = "アップロード対象のファイルがありません。";
+    return;
+  }
+
   const failed = [];   // 失敗したファイルを入れる箱
   let done = 0;        // 成功した数
 
-  const btn = document.getElementById("uploadBtn");
-  btn.disabled = true;
-
-  result.innerText = "アップロード中…";
+  uploadBtn.disabled = true;
+  resultDiv.innerText = "アップロード中…";
 
   try {
-    for (const file of files) {
-      const parts = file.webkitRelativePath.split("/");
-      if (parts.includes(".git")) continue;
-      const path = parts.slice(1).join("/");
-
-      result.innerText = `アップロード中… ${path}`;   // 今どのファイルか分かるように
+    for (const { file, path } of targets) {
+      resultDiv.innerText = `アップロード中… (${done + failed.length + 1}/${targets.length}) ${path}`;
 
       try {
         const content = await fileToBase64(file);
         await uploadWithSha(owner, repo, path, content, token);
-        done++;   // ここまで来たら成功
+        done++;
       } catch (e) {
-        failed.push(`${path}: ${e.message}`);   // 失敗を記録して、次のファイルへ
+        failed.push(`${path}: ${e.message}`);
         // トークンが無効(401)なら、続けても全部失敗するのでここで止める
         if (e.status === 401) break;
       }
 
-      await sleep(500);
+      await sleep(WAIT_BETWEEN_FILES_MS);
     }
   } finally {
-    btn.disabled = false;
+    uploadBtn.disabled = false;
   }
 
-  const lines = [`成功: ${done} ファイル`];
+  const lines = [`成功: ${done} / ${targets.length} ファイル`];
   if (failed.length) lines.push("", `失敗 ${failed.length} 件:`, ...failed);
-  result.innerText = lines.join("\n");
-  result.style.whiteSpace = "pre-wrap";
+  resultDiv.innerText = lines.join("\n");
+  resultDiv.style.whiteSpace = "pre-wrap";
 });
