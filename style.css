@@ -19,7 +19,7 @@ button {
   max-width: 500px;
   box-sizing: border-box;
 }
-
+/* アップロードボタン */
 button {
   background-color: #4CAF50;
   color: white;
@@ -27,12 +27,44 @@ button {
   cursor: pointer;
   font-weight: bold;
 }
-
+/* アップロードボタン：ホバー時 */
 button:hover {
   background-color: #45a049;
 }
 
+/* アップロードボタン：クリック時 */
 button:disabled {
   background-color: #999;
   cursor: not-allowed;
+}
+
+/* 選択解除ボタン */
+button.secondary {
+  background-color: #777;
+}
+
+/* 選択解除ボタン：ホバー時 */
+button.secondary:hover {
+  background-color: #666;
+}
+
+/* 選択解除ボタン：クリック時 */
+button.secondary:disabled {
+  background-color: #999;
+}
+
+/* ファイル名の一覧（長い時はこの枠の中でスクロール） */
+#fileList {
+  max-width: 500px;
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 10px 0;
+  padding: 10px 10px 10px 30px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  word-break: break-all;
+}
+
+#fileList:empty {
+  display: none;  /* 中身がない時は枠ごと隠す */
 }
