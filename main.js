@@ -9,7 +9,8 @@ const resultDiv = document.getElementById("result");
 
 const clearBtn = document.getElementById("clearBtn");
 const fileCountP = document.getElementById("fileCount");
-const fileListUl= document.getElementById("fileList");
+const fileListUl = document.getElementById("fileList");
+const uploadedListUl = document.getElementById("uploadedList");
 
 
 // ===============================
@@ -143,6 +144,17 @@ function renderFileList() {
   }
 }
 
+// アップロード成功したファイルを一覧に表示する関数
+function renderUploadedList(paths) {
+  uploadedListUl.innerHTML = "";  // まず一覧を空にする
+
+  for (const path of paths) {
+    const li = document.createElement("li");
+    li.textContent = path;
+    uploadedListUl.appendChild(li);
+  }
+}
+
 // フォルダが選ばれたら、一覧を更新する
 folderInput.addEventListener("change", renderFileList);
 
@@ -215,9 +227,11 @@ uploadBtn.addEventListener("click", async () => {
     return;
   }
 
-  const failed = [];   // 失敗したファイルを入れる箱
-  let done = 0;        // 成功した数
+  const failed = [];     // 失敗したファイルを入れる箱
+  const succeeded = [];  // 成功したファイルのパスを入れる箱
+  let done = 0;          // 成功した数
 
+  renderUploadedList([]);  // 前回の一覧を消す
   uploadBtn.disabled = true;
   clearBtn.disabled = true;
   resultDiv.innerText = "アップロード中…";
@@ -230,6 +244,7 @@ uploadBtn.addEventListener("click", async () => {
         const content = await fileToBase64(file);
         await uploadWithSha(owner, repo, path, content, token);
         done++;
+        succeeded.push(path);
       } catch (e) {
         failed.push(`${path}: ${e.message}`);
         // トークンが無効(401)なら、続けても全部失敗するのでここで止める
@@ -247,11 +262,13 @@ uploadBtn.addEventListener("click", async () => {
   if (failed.length) lines.push("", `失敗 ${failed.length} 件:`, ...failed);
   resultDiv.innerText = lines.join("\n");
   resultDiv.style.whiteSpace = "pre-wrap";
+  renderUploadedList(succeeded);
 });
 
 // 選択解除ボタン
 clearBtn.addEventListener("click", () => {
   folderInput.value = "";    // 選択したファイルを全部解除する
   renderFileList();          // 一覧も空にする
+  renderUploadedList([]);
   resultDiv.innerText = "";  // 前回のアップロード結果も消す
 })
