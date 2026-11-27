@@ -6,8 +6,9 @@ const WAIT_BETWEEN_FILES_MS = 500;          // 1ファイルごとの待ち時�
 
 // フォルダ選択のとき、自動で除外する名前（フォルダ名・ファイル名を随時たす）
 const EXCLUDED_NAMES = [
-  ".git", 
-  "node_modules", 
-  ".DS_Store", 
+  ".git",
+  ".vscode",
+  "node_modules",
+  ".DS_Store",
   "Thumbs.db"
 ];
