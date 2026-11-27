@@ -18,10 +18,18 @@
 
   <br><br><br>
 
-  <input type="file" id="folderInput" webkitdirectory>
+  <!-- 本物の選択欄(画面には出さない) -->
+  <input type = "file" id="fileInput" multiple hidden>
+  <input type="file" id="folderInput" webkitdirectory hidden>
+  <br>
+
+  <!-- 見える方のボタン -->
+  <button id="pickFilesBtn" class="pick" type="button">ファイルを選択</button>
+  <button id="pickFolderBtn" class="pick" type="button">フォルダを選択</button>
   <br>
 
   <p id = "fileCount"></p>
+  <p id = "duplicateWarning" class = "warning"></p>
   <ul id = "fileList"></ul>
 
   <button id = "clearBtn" class = "secondary" type = "button">選択を解除</button>
@@ -29,8 +37,6 @@
   <button id="uploadBtn">アップロード</button>
 
   <div id="result"></div>
-
-  <div id = "result"></div>
   <ul id = "uploadedList"></ul>
 
   <script src="main.js"></script>
